@@ -172,4 +172,133 @@ Please provide:
   }
 });
 
+// POST /api/custom-models/:id/infer — Model Inference Playground
+// Routes inference requests to the deployed model's endpoint_url if available,
+// otherwise uses OpenRouter as a proxy for in-app prompt testing.
+router.post('/:id/infer', authMiddleware, async (req, res) => {
+  try {
+    const { prompt, system_prompt, max_tokens = 1000 } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'prompt is required' });
+    }
+
+    const result = await db.query(
+      `SELECT cm.*, bm.name as base_model_name, bm.provider
+       FROM custom_models cm
+       LEFT JOIN base_models bm ON cm.base_model_id = bm.id
+       WHERE cm.id = $1`,
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Custom model not found' });
+    }
+
+    const model = result.rows[0];
+
+    // If the model has a deployed endpoint_url, proxy to it
+    if (model.endpoint_url) {
+      try {
+        const endpointResponse = await fetch(model.endpoint_url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}` },
+          body: JSON.stringify({ prompt, system_prompt, max_tokens }),
+        });
+
+        if (!endpointResponse.ok) {
+          throw new Error(`Endpoint returned ${endpointResponse.status}`);
+        }
+
+        const endpointData = await endpointResponse.json();
+        return res.json({
+          model_id: model.id,
+          model_name: model.name,
+          endpoint_url: model.endpoint_url,
+          source: 'custom_endpoint',
+          response: endpointData,
+          prompt,
+        });
+      } catch (endpointErr) {
+        // Fall through to OpenRouter proxy
+        console.warn(`[InferencePG] Custom endpoint failed: ${endpointErr.message}. Falling back to OpenRouter.`);
+      }
+    }
+
+    // Fallback: use OpenRouter with the model's base model or configured model
+    const inferSystemPrompt = system_prompt ||
+      `You are ${model.name}, a custom fine-tuned AI model based on ${model.base_model_name || 'an LLM'}. ${model.description || ''}`;
+
+    const aiResponse = await callOpenRouter(`${inferSystemPrompt}\n\nUser: ${prompt}`);
+
+    // Log inference to audit table
+    await db.query(
+      `INSERT INTO audit_logs (action, resource_type, resource_id, user_id, ip_address)
+       VALUES ('infer', 'custom_model', $1, $2, $3)`,
+      [model.id, req.user.id, req.ip || null]
+    ).catch(() => {});
+
+    res.json({
+      model_id: model.id,
+      model_name: model.name,
+      source: 'openrouter_proxy',
+      base_model: model.base_model_name,
+      response: aiResponse.content,
+      usage: aiResponse.usage,
+      prompt,
+      system_prompt: inferSystemPrompt,
+      note: model.endpoint_url ? 'Custom endpoint unavailable — used OpenRouter proxy' : 'Model not deployed — using OpenRouter proxy for demonstration'
+    });
+  } catch (err) {
+    console.error('Inference error:', err);
+    res.status(500).json({ error: 'Failed to run inference' });
+  }
+});
+
+// POST /api/custom-models/:id/compare-to-base — Compare fine-tuned vs base model response
+router.post('/:id/compare-to-base', authMiddleware, async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ error: 'prompt is required' });
+
+    const result = await db.query(
+      `SELECT cm.*, bm.name as base_model_name FROM custom_models cm LEFT JOIN base_models bm ON cm.base_model_id = bm.id WHERE cm.id = $1`,
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Custom model not found' });
+    const model = result.rows[0];
+
+    // Run both in parallel (simulated — both use OpenRouter)
+    const fineTunedSystemPrompt = `You are ${model.name}, a custom fine-tuned model. ${model.description || ''} Answer as a specialized fine-tuned model would.`;
+    const baseSystemPrompt = `You are ${model.base_model_name || 'a general-purpose AI'}. Answer as a general model would, without any domain specialization.`;
+
+    const [fineTunedResponse, baseResponse] = await Promise.all([
+      callOpenRouter(`${fineTunedSystemPrompt}\n\n${prompt}`),
+      callOpenRouter(`${baseSystemPrompt}\n\n${prompt}`)
+    ]);
+
+    const evalPrompt = `Compare these two AI responses to the prompt: "${prompt}"
+Response A (Fine-tuned: ${model.name}): ${fineTunedResponse.content}
+Response B (Base model: ${model.base_model_name || 'General'}): ${baseResponse.content}
+
+Rate which response is better for this specialized task and explain why. Return JSON: { "winner": "fine_tuned|base|tie", "fine_tuned_score": <1-10>, "base_score": <1-10>, "rationale": "<explanation>", "fine_tuning_value_added": "<specific improvements>" }`;
+
+    const evalResponse = await callOpenRouter(evalPrompt);
+    let evaluation = null;
+    try { const m = (evalResponse.content || '').match(/\{[\s\S]*\}/); if (m) evaluation = JSON.parse(m[0]); } catch (_) {}
+
+    res.json({
+      model_id: model.id,
+      prompt,
+      fine_tuned_response: fineTunedResponse.content,
+      base_model_response: baseResponse.content,
+      ai_evaluation: evaluation || evalResponse.content
+    });
+  } catch (err) {
+    console.error('Compare error:', err);
+    res.status(500).json({ error: 'Failed to compare models' });
+  }
+});
+
 module.exports = router;

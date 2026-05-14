@@ -144,6 +144,9 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 
 // POST /api/deployments/:id/ai-scale
 router.post('/:id/ai-scale', authMiddleware, async (req, res) => {
+  const { parseAIJson } = require('../services/openrouter');
+  const { saveAiResult } = require('../services/aiResultsStore');
+  const startedAt = Date.now();
   try {
     const result = await db.query(
       `SELECT d.*, cm.name as model_name, cm.performance_metrics
@@ -158,9 +161,12 @@ router.post('/:id/ai-scale', authMiddleware, async (req, res) => {
     }
 
     const deployment = result.rows[0];
+    if (req.user?.role !== 'admin' && deployment.user_id && String(deployment.user_id) !== String(req.user.id)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
     const { expected_traffic, latency_target } = req.body;
 
-    const prompt = `Provide scaling recommendations for the following model deployment:
+    const prompt = `Provide scaling recommendations for the following model deployment. Respond with STRICT JSON only.
 
 Deployment: ${deployment.name}
 Model: ${deployment.model_name || 'Unknown'}
@@ -172,17 +178,42 @@ Model Performance: ${JSON.stringify(deployment.performance_metrics)}
 Expected Traffic: ${expected_traffic || 'Not specified'}
 Latency Target: ${latency_target || 'Not specified'}
 
-Please provide:
-1. Recommended number of replicas
-2. Auto-scaling configuration (min/max replicas, scaling triggers)
-3. Resource allocation (GPU, memory, CPU)
-4. Load balancing strategy
-5. Cost estimation for the recommended setup
-6. Performance optimization tips
-7. Monitoring and alerting recommendations`;
+Return JSON of shape:
+{
+  "replicas": number,
+  "autoscaling": { "min": number, "max": number, "trigger_cpu_pct": number },
+  "resources": { "gpu": "string", "memory_gb": number, "cpu_cores": number },
+  "load_balancing": "string",
+  "cost_estimate_usd_per_month": number,
+  "optimization_tips": ["string"],
+  "monitoring": ["string"]
+}`;
 
     const aiResponse = await callOpenRouter(prompt);
-    res.json({ deployment_id: deployment.id, scaling_recommendations: aiResponse.content, model: aiResponse.model });
+    const parsed = parseAIJson(aiResponse.content);
+    const duration = Date.now() - startedAt;
+
+    await saveAiResult({
+      feature: 'deployments.ai_scale',
+      user_id: req.user?.id,
+      entity_type: 'deployment',
+      entity_id: deployment.id,
+      input: { expected_traffic, latency_target, current_replicas: deployment.replicas },
+      output: parsed,
+      raw: aiResponse.content,
+      model: aiResponse.model,
+      tokens_in: aiResponse.usage?.prompt_tokens || null,
+      tokens_out: aiResponse.usage?.completion_tokens || null,
+      duration_ms: duration,
+    });
+
+    res.json({
+      deployment_id: deployment.id,
+      scaling_recommendations: aiResponse.content,
+      parsed,
+      model: aiResponse.model,
+      duration_ms: duration,
+    });
   } catch (err) {
     console.error('AI scale error:', err);
     res.status(500).json({ error: 'Failed to get AI scaling suggestions' });

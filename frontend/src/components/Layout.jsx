@@ -6,7 +6,7 @@ import {
   FiKey, FiCloud, FiSettings, FiGitBranch, FiColumns, FiFileText,
   FiDollarSign, FiShield, FiUsers, FiLogOut, FiBell, FiLink, FiTag,
   FiStar, FiMessageSquare, FiClock, FiFile, FiDownloadCloud,
-  FiSearch, FiActivity, FiHelpCircle, FiDownload, FiUser
+  FiSearch, FiActivity, FiHelpCircle, FiDownload, FiUser, FiTarget
 } from 'react-icons/fi';
 
 const navSections = [
@@ -36,10 +36,17 @@ const navSections = [
     title: 'Operations',
     items: [
       { path: '/deployments', label: 'Deployments', icon: FiCloud },
+      { path: '/inference', label: 'Inference Playground', icon: FiCpu },
+      { path: '/bayesian-search', label: 'Bayesian HP Search', icon: FiTarget },
+      { path: '/prompt-ab', label: 'Prompt A/B Tester', icon: FiGitBranch },
+      { path: '/deployment-templates', label: 'Deployment Templates', icon: FiCloud },
+      { path: '/marketplace', label: 'Model Marketplace', icon: FiBox },
+      { path: '/huggingface', label: 'Hugging Face Hub', icon: FiBox },
       { path: '/api-keys', label: 'API Keys', icon: FiKey },
       { path: '/data-pipelines', label: 'Data Pipelines', icon: FiGitBranch },
       { path: '/webhooks', label: 'Webhooks', icon: FiLink },
       { path: '/scheduled-tasks', label: 'Scheduled Tasks', icon: FiClock },
+      { path: '/ai-results', label: 'AI Run History', icon: FiActivity },
     ],
   },
   {
@@ -54,6 +61,7 @@ const navSections = [
   {
     title: 'Analytics & Reports',
     items: [
+      { path: '/cost-estimator', label: 'Cost Estimator', icon: FiDollarSign },
       { path: '/usage-billing', label: 'Usage & Billing', icon: FiDollarSign },
       { path: '/reports', label: 'Reports', icon: FiBarChart2 },
       { path: '/activity', label: 'Activity Timeline', icon: FiActivity },

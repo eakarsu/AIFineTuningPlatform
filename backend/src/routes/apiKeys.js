@@ -1,15 +1,15 @@
 const express = require('express');
 const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
 const db = require('../db');
 const authMiddleware = require('../middleware/auth');
+const { hashKey } = require('../middleware/apiKeyAuth');
 
 const router = express.Router();
 
 function generateApiKey() {
   const prefix = 'aft_';
   const key = crypto.randomBytes(32).toString('hex');
-  return { fullKey: prefix + key, prefix: prefix, rawKey: key };
+  return { fullKey: prefix + key, prefix: prefix, rawKey: prefix + key };
 }
 
 // GET /api/api-keys
@@ -19,12 +19,16 @@ router.get('/', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
+    const isAdmin = req.user?.role === 'admin';
+    const params = isAdmin ? [] : [req.user.id];
+    const where = isAdmin ? '' : 'WHERE user_id = $1';
+    const offsetIdx = params.length + 1;
     const [result, countResult] = await Promise.all([
       db.query(
-        'SELECT id, name, key_prefix, permissions, rate_limit, is_active, last_used_at, user_id, created_at, expires_at FROM api_keys ORDER BY created_at DESC LIMIT $1 OFFSET $2',
-        [limit, offset]
+        `SELECT id, name, key_prefix, permissions, rate_limit, is_active, last_used_at, user_id, created_at, expires_at FROM api_keys ${where} ORDER BY created_at DESC LIMIT $${offsetIdx} OFFSET $${offsetIdx + 1}`,
+        [...params, limit, offset]
       ),
-      db.query('SELECT COUNT(*) FROM api_keys'),
+      db.query(`SELECT COUNT(*) FROM api_keys ${where}`, params),
     ]);
 
     res.json({
@@ -69,7 +73,9 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 
     const { fullKey, prefix, rawKey } = generateApiKey();
-    const keyHash = await bcrypt.hash(rawKey, 10);
+    // Use SHA256 indexed hash for fast lookup at auth time. The full key is
+    // only ever shown once on creation; we never store it in plaintext.
+    const keyHash = hashKey(rawKey);
 
     const result = await db.query(
       `INSERT INTO api_keys (name, key_prefix, key_hash, permissions, rate_limit, is_active, user_id, expires_at)

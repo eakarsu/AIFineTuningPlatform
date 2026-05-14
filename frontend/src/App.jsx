@@ -34,6 +34,16 @@ import GlobalSearchPage from './pages/GlobalSearchPage';
 import ActivityPage from './pages/ActivityPage';
 import HelpCenterPage from './pages/HelpCenterPage';
 import ExportPage from './pages/ExportPage';
+import AiResultsPage from './pages/AiResultsPage';
+import InferencePage from './pages/InferencePage';
+import CostEstimatorPage from './pages/CostEstimatorPage';
+import BayesianSearchPage from './pages/BayesianSearchPage';
+import PromptABTesterPage from './pages/PromptABTesterPage';
+import MarketplacePage from './pages/MarketplacePage';
+import DeploymentTemplatesPage from './pages/DeploymentTemplatesPage';
+import HuggingFacePage from './pages/HuggingFacePage';
+
+import Batch03Features from './pages/Batch03Features';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -52,6 +62,7 @@ function AppRoutes() {
 
   return (
     <Routes>
+          <Route path="/batch03" element={<Batch03Features />} />
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
@@ -92,6 +103,14 @@ function AppRoutes() {
                 <Route path="/activity" element={<ActivityPage />} />
                 <Route path="/help" element={<HelpCenterPage />} />
                 <Route path="/export" element={<ExportPage />} />
+                <Route path="/ai-results" element={<AiResultsPage />} />
+                <Route path="/inference" element={<InferencePage />} />
+                <Route path="/cost-estimator" element={<CostEstimatorPage />} />
+                <Route path="/bayesian-search" element={<BayesianSearchPage />} />
+                <Route path="/prompt-ab" element={<PromptABTesterPage />} />
+                <Route path="/marketplace" element={<MarketplacePage />} />
+                <Route path="/deployment-templates" element={<DeploymentTemplatesPage />} />
+                <Route path="/huggingface" element={<HuggingFacePage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>

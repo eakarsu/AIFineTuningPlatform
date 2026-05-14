@@ -7,7 +7,8 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'ai-finetuning-platform-secret-key-2024';
+// Use the same secret resolution as middleware/auth (no insecure fallback in production)
+const JWT_SECRET = require('../middleware/auth').JWT_SECRET;
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
