@@ -44,6 +44,7 @@ import DeploymentTemplatesPage from './pages/DeploymentTemplatesPage';
 import HuggingFacePage from './pages/HuggingFacePage';
 
 import Batch03Features from './pages/Batch03Features';
+import CustomViewsPage from './pages/CustomViewsPage';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -111,6 +112,7 @@ function AppRoutes() {
                 <Route path="/marketplace" element={<MarketplacePage />} />
                 <Route path="/deployment-templates" element={<DeploymentTemplatesPage />} />
                 <Route path="/huggingface" element={<HuggingFacePage />} />
+                <Route path="/custom-views" element={<CustomViewsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>

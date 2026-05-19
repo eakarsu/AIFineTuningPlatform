@@ -111,6 +111,7 @@ app.use('/api/marketplace-listing', require('./routes/marketplaceListing'));
 app.use('/api/one-click-deploy', require('./routes/oneClickDeploy'));
 app.use('/api/drift-monitor', require('./routes/driftMonitor'));
 app.use('/api/prompt-engineering', require('./routes/promptEngineering'));
+app.use('/api/custom-views', require('./routes/customViews')); // Training Views: 2 viz + 2 wizards
 
 // Health check
 app.get('/api/health', (req, res) => {

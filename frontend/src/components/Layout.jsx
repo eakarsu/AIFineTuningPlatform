@@ -50,6 +50,12 @@ const navSections = [
     ],
   },
   {
+    title: 'Training Views',
+    items: [
+      { path: '/custom-views', label: 'Training Views', icon: FiBarChart2 },
+    ],
+  },
+  {
     title: 'Organization',
     items: [
       { path: '/team-members', label: 'Team Management', icon: FiUsers },
