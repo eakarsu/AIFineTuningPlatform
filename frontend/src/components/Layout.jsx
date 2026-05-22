@@ -6,7 +6,7 @@ import {
   FiKey, FiCloud, FiSettings, FiGitBranch, FiColumns, FiFileText,
   FiDollarSign, FiShield, FiUsers, FiLogOut, FiBell, FiLink, FiTag,
   FiStar, FiMessageSquare, FiClock, FiFile, FiDownloadCloud,
-  FiSearch, FiActivity, FiHelpCircle, FiDownload, FiUser, FiTarget
+  FiSearch, FiActivity, FiHelpCircle, FiDownload, FiUser, FiTarget, FiAlertTriangle
 } from 'react-icons/fi';
 
 const navSections = [
@@ -53,6 +53,7 @@ const navSections = [
     title: 'Training Views',
     items: [
       { path: '/custom-views', label: 'Training Views', icon: FiBarChart2 },
+      { path: '/dataset-leakage', label: 'Dataset Leakage', icon: FiAlertTriangle },
     ],
   },
   {

@@ -46,6 +46,10 @@ import HuggingFacePage from './pages/HuggingFacePage';
 import Batch03Features from './pages/Batch03Features';
 import CustomViewsPage from './pages/CustomViewsPage';
 
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+import DatasetLeakageGuardPage from './pages/DatasetLeakageGuardPage';
+
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) {
@@ -63,6 +67,9 @@ function AppRoutes() {
 
   return (
     <Routes>
+        <Route path="/codex/custom-viz" element={<ProtectedRoute><CodexCustomVizFeature /></ProtectedRoute>} />
+        <Route path="/codex/operations" element={<ProtectedRoute><CodexOperationsFeature /></ProtectedRoute>} />
+
           <Route path="/batch03" element={<Batch03Features />} />
       <Route
         path="/login"
@@ -113,6 +120,7 @@ function AppRoutes() {
                 <Route path="/deployment-templates" element={<DeploymentTemplatesPage />} />
                 <Route path="/huggingface" element={<HuggingFacePage />} />
                 <Route path="/custom-views" element={<CustomViewsPage />} />
+                <Route path="/dataset-leakage" element={<DatasetLeakageGuardPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Layout>
