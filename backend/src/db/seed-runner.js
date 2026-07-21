@@ -26,6 +26,10 @@ async function seedDatabase() {
     await db.query(schemaAdditionsSQL);
     console.log('Additional schema created/verified');
 
+    const governedSQL = fs.readFileSync(path.join(__dirname, 'schema-governed.sql'), 'utf8');
+    await db.query(governedSQL);
+    console.log('Governed lifecycle schema created/verified');
+
     // Run seed
     await db.query(seedSQL);
     console.log('Seed data inserted successfully');

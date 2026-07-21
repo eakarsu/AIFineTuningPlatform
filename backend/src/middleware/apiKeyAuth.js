@@ -24,7 +24,7 @@ async function apiKeyAuth(req, res, next) {
   try {
     const keyHash = hashKey(apiKey);
     const result = await db.query(
-      `SELECT ak.id, ak.user_id, ak.name, ak.scopes, ak.expires_at, u.email, u.role
+      `SELECT ak.id, ak.user_id, ak.name, ak.scopes, ak.expires_at, u.email, u.role, u.tenant_id
          FROM api_keys ak
          LEFT JOIN users u ON u.id = ak.user_id
          WHERE ak.key_hash = $1 AND (ak.is_active IS NULL OR ak.is_active = TRUE)`,
@@ -40,7 +40,8 @@ async function apiKeyAuth(req, res, next) {
     // Update last_used_at best-effort
     db.query('UPDATE api_keys SET last_used_at = NOW() WHERE id = $1', [row.id]).catch(() => {});
 
-    req.user = { id: row.user_id, email: row.email, role: row.role };
+    if (!row.tenant_id) return res.status(401).json({ error: 'API key owner has no tenant assignment' });
+    req.user = { id: row.user_id, tenant_id: row.tenant_id, email: row.email, role: row.role };
     req.apiKey = { id: row.id, name: row.name, scopes: row.scopes };
     next();
   } catch (e) {

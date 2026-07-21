@@ -1,19 +1,17 @@
+'use strict';
+
 const { Pool } = require('pg');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
+if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required');
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT, 10) || 5432,
-  database: process.env.DB_NAME || 'ai_finetuning_platform',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: true } : undefined,
+  max: Math.max(1, Math.min(Number(process.env.DB_POOL_MAX) || 10, 30)),
 });
-
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
-  process.exit(-1);
-});
+pool.on('error', (error) => console.error('Idle database client failed:', error.message));
 
 module.exports = {
   query: (text, params) => pool.query(text, params),

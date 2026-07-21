@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../services/AuthContext';
 import toast from 'react-hot-toast';
-import { FiMail, FiLock, FiZap } from 'react-icons/fi';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,21 +19,6 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      toast.success('Welcome back!');
-      navigate('/');
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQuickLogin = async () => {
-    setEmail('admin@aifinetuning.com');
-    setPassword('admin123');
-    setLoading(true);
-    try {
-      await login('admin@aifinetuning.com', 'admin123');
       toast.success('Welcome back!');
       navigate('/');
     } catch (err) {
@@ -82,16 +66,6 @@ export default function LoginPage() {
             {loading ? <div className="spinner spinner-sm" /> : 'Sign In'}
           </button>
         </form>
-        <div className="login-divider">or</div>
-        <button
-          type="button"
-          className="btn btn-accent btn-lg"
-          style={{ width: '100%', justifyContent: 'center' }}
-          onClick={handleQuickLogin}
-          disabled={loading}
-        >
-          <FiZap /> Quick Login (Demo)
-        </button>
       </div>
     </div>
   );
