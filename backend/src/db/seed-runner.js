@@ -3,10 +3,16 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 const db = require('./index');
 
+function requireDemoPassword() {
+  const password = process.env.DEMO_PASSWORD || process.env.SEED_DEMO_PASSWORD || process.env.DEMO_SEED_PASSWORD || '';
+  if (password.length < 12 || password.length > 1024) throw new Error('DEMO_PASSWORD must contain 12-1024 characters');
+  return password;
+}
+
 async function seedDatabase() {
   try {
     // Generate proper bcrypt hash for 'admin123'
-    const passwordHash = await bcrypt.hash('admin123', 10);
+    const passwordHash = await bcrypt.hash(requireDemoPassword(), 10);
 
     // Read seed SQL
     let seedSQL = fs.readFileSync(path.join(__dirname, 'seed.sql'), 'utf8');
