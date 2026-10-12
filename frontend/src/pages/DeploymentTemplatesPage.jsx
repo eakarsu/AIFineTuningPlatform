@@ -1,3 +1,4 @@
+import FormattedAIReport from "../components/FormattedAIReport";
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { FiCloud, FiZap, FiTrash2 } from 'react-icons/fi';
@@ -124,7 +125,7 @@ export default function DeploymentTemplatesPage() {
           </div>
           <button type="submit" style={{ padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6 }}>Deploy</button>
           {result && (
-            <pre style={{ marginTop: 8, padding: 8, background: '#fff', border: '1px solid #d1d5db', borderRadius: 6, overflow: 'auto', fontSize: 12 }}>{JSON.stringify(result, null, 2)}</pre>
+            <FormattedAIReport response={result} />
           )}
         </form>
       </div>

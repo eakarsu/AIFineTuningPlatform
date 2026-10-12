@@ -1,6 +1,14 @@
+import FormattedAIReport from "../components/FormattedAIReport";
+import FillAllAIFields from '../components/FillAllAIFields';
 import React, { useState } from 'react';
 import api from '../services/api';
 import { FiTarget, FiCpu, FiAlertCircle } from 'react-icons/fi';
+
+const SEARCH_EXAMPLES = [
+  { label: 'Loss minimization', values: { base_model: 'llama-3-8b', task: 'instruction-tuning', metric: 'eval_loss', metric_direction: 'minimize', trials: 5, prior_observations: '[]', search_space: JSON.stringify({ learning_rate: { type: 'loguniform', low: 1e-6, high: 1e-3 }, batch_size: { type: 'choice', choices: [4, 8, 16, 32] }, warmup_ratio: { type: 'uniform', low: 0, high: 0.1 }, weight_decay: { type: 'loguniform', low: 1e-4, high: 1e-1 } }, null, 2) } },
+  { label: 'Use prior evaluations', values: { base_model: 'mistral-7b', task: 'domain-adaptation', metric: 'eval_loss', metric_direction: 'minimize', trials: 8, prior_observations: JSON.stringify([{ params: { learning_rate: 0.00002, batch_size: 16 }, metric: 1.24 }, { params: { learning_rate: 0.00005, batch_size: 8 }, metric: 1.18 }], null, 2), search_space: JSON.stringify({ learning_rate: { type: 'loguniform', low: 1e-5, high: 2e-4 }, batch_size: { type: 'choice', choices: [4, 8, 16] }, warmup_ratio: { type: 'uniform', low: 0, high: 0.08 } }, null, 2) } },
+  { label: 'Accuracy exploration', values: { base_model: 'llama-3-8b', task: 'classification-finetuning', metric: 'validation_accuracy', metric_direction: 'maximize', trials: 10, prior_observations: '[]', search_space: JSON.stringify({ learning_rate: { type: 'loguniform', low: 5e-6, high: 5e-4 }, batch_size: { type: 'choice', choices: [8, 16, 32] }, warmup_ratio: { type: 'uniform', low: 0.01, high: 0.12 }, weight_decay: { type: 'loguniform', low: 1e-4, high: 0.05 } }, null, 2) } },
+];
 
 export default function BayesianSearchPage() {
   const [form, setForm] = useState({
@@ -69,6 +77,7 @@ export default function BayesianSearchPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
         <form onSubmit={handleSubmit} style={{ background: 'white', padding: 24, border: '1px solid #e5e7eb', borderRadius: 8 }}>
           <h3>Inputs</h3>
+          <FillAllAIFields examples={SEARCH_EXAMPLES} disabled={loading} onFill={(values) => { setForm(values); setResult(null); setError(''); }} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
             <div>
               <label>Base Model</label>
@@ -157,7 +166,7 @@ export default function BayesianSearchPage() {
               )}
               <details style={{ marginTop: 16 }}>
                 <summary style={{ cursor: 'pointer', color: '#6b7280' }}>Raw Response</summary>
-                <pre style={{ background: '#f9fafb', padding: 12, borderRadius: 6, fontSize: 12, overflow: 'auto', maxHeight: 240 }}>{JSON.stringify(result, null, 2)}</pre>
+                <FormattedAIReport response={result} />
               </details>
             </>
           )}

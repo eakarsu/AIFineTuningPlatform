@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { FiPlay, FiCloud, FiClock, FiCpu } from 'react-icons/fi';
+import FillAllAIFields from '../components/FillAllAIFields';
+import FormattedAIReport from '../components/FormattedAIReport';
+
+const INFERENCE_EXAMPLES = [
+  { label: 'Concise response', values: { system: 'Answer accurately and briefly. If the prompt lacks evidence, state what is missing.', prompt: 'Explain why a validation set should be separate from training data.', maxTokens: 512, temperature: 0.3 } },
+  { label: 'Structured explanation', values: { system: 'Use a clear explanation with short headings, one example, and practical limitations.', prompt: 'Describe how learning rate and batch size can affect fine-tuning stability.', maxTokens: 1024, temperature: 0.5 } },
+  { label: 'JSON output', values: { system: 'Return valid JSON with keys summary, key_points, assumptions, and follow_up_questions. Do not include markdown fences.', prompt: 'Summarize the tradeoffs between full fine-tuning and LoRA for a small domain dataset.', maxTokens: 1200, temperature: 0.2 } },
+];
 
 export default function InferencePage() {
   const [deployments, setDeployments] = useState([]);
@@ -51,6 +59,7 @@ export default function InferencePage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
         <div style={{ background: 'white', padding: 24, border: '1px solid #e5e7eb', borderRadius: 8 }}>
           <h3>Request</h3>
+          <FillAllAIFields examples={INFERENCE_EXAMPLES} disabled={loading} note="Examples fill the system prompt, request, token limit, and temperature. Keep an actual deployment selected." onFill={(values) => { setSystem(values.system); setPrompt(values.prompt); setMaxTokens(values.maxTokens); setTemperature(values.temperature); setResponse(null); setError(''); }} />
           <label style={{ display: 'block', marginTop: 16, marginBottom: 4 }}>Deployment</label>
           <select value={selectedDeployment} onChange={(e) => setSelectedDeployment(e.target.value)} style={{ width: '100%', padding: 8, border: '1px solid #d1d5db', borderRadius: 6 }}>
             <option value="">Select an active deployment...</option>
@@ -94,7 +103,7 @@ export default function InferencePage() {
                 <span><FiClock /> {response.duration_ms}ms</span>
                 {response.usage && <span>Tokens: {response.usage.total_tokens || ((response.usage.prompt_tokens || 0) + (response.usage.completion_tokens || 0))}</span>}
               </div>
-              <pre style={{ background: '#f9fafb', padding: 12, borderRadius: 6, whiteSpace: 'pre-wrap', maxHeight: 400, overflow: 'auto' }}>{response.content}</pre>
+              <FormattedAIReport response={response.content} title="Model response" model={response.model} tokens={response.usage} />
             </>
           )}
         </div>

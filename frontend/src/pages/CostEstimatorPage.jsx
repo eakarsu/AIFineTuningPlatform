@@ -1,6 +1,14 @@
+import FormattedAIReport from "../components/FormattedAIReport";
+import FillAllAIFields from '../components/FillAllAIFields';
 import React, { useState } from 'react';
 import api from '../services/api';
 import { FiDollarSign, FiCpu, FiAlertCircle } from 'react-icons/fi';
+
+const COST_EXAMPLES = [
+  { label: 'Illustrative starter', values: { base_model: 'llama-3-8b', dataset_size: 25000, epochs: 2, batch_size: 16, gpu_type: 'T4', gpu_count: 1, gpu_hourly_rate: 0.75, overhead_pct: 10, technique: 'qlora', include_ai_narrative: false } },
+  { label: 'LoRA planning', values: { base_model: 'llama-3-8b', dataset_size: 50000, epochs: 3, batch_size: 16, gpu_type: 'A100', gpu_count: 1, gpu_hourly_rate: 3.5, overhead_pct: 15, technique: 'lora', include_ai_narrative: true } },
+  { label: 'Higher-capacity QLoRA', values: { base_model: 'llama-3-70b', dataset_size: 100000, epochs: 3, batch_size: 8, gpu_type: 'H100', gpu_count: 2, gpu_hourly_rate: 6, overhead_pct: 20, technique: 'qlora', include_ai_narrative: true } },
+];
 
 export default function CostEstimatorPage() {
   const [form, setForm] = useState({
@@ -58,6 +66,7 @@ export default function CostEstimatorPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
         <form onSubmit={handleSubmit} style={{ background: 'white', padding: 24, border: '1px solid #e5e7eb', borderRadius: 8 }}>
           <h3>Inputs</h3>
+          <FillAllAIFields examples={COST_EXAMPLES} disabled={loading} onFill={(values) => { setForm(values); setResult(null); setError(''); }} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
             <div>
               <label>Base Model</label>
@@ -166,7 +175,7 @@ export default function CostEstimatorPage() {
               )}
               <details style={{ marginTop: 16 }}>
                 <summary style={{ cursor: 'pointer', color: '#6b7280' }}>Raw Response</summary>
-                <pre style={{ background: '#f9fafb', padding: 12, borderRadius: 6, fontSize: 12, overflow: 'auto', maxHeight: 240 }}>{JSON.stringify(result, null, 2)}</pre>
+                <FormattedAIReport response={result} />
               </details>
             </>
           )}

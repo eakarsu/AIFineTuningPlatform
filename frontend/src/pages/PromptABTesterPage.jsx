@@ -1,6 +1,44 @@
+import FormattedAIReport from "../components/FormattedAIReport";
+import FillAllAIFields from '../components/FillAllAIFields';
 import React, { useState } from 'react';
 import api from '../services/api';
 import { FiGitBranch, FiCpu, FiAlertCircle } from 'react-icons/fi';
+
+const PROMPT_EXAMPLES = [
+  {
+    label: 'Concise baseline',
+    values: {
+      prompt_a: 'Answer in one clear sentence. Define technical terms in plain language.',
+      prompt_b: 'Give a concise answer, then add one practical example and a short caveat.',
+      samples_a: JSON.stringify([{ prompt_input: 'What is gradient descent?', output: 'An optimization method that adjusts parameters to reduce a model’s error.', score: 4 }, { prompt_input: 'What is overfitting?', output: 'When a model learns training examples too closely and performs poorly on new data.', score: 4 }], null, 2),
+      samples_b: JSON.stringify([{ prompt_input: 'What is gradient descent?', output: 'Gradient descent iteratively updates a model’s parameters to reduce its loss; imagine walking downhill by following the steepest local slope.', score: 5 }, { prompt_input: 'What is overfitting?', output: 'Overfitting is memorizing training data instead of learning patterns; compare it to memorizing practice answers without understanding the subject.', score: 5 }], null, 2),
+      judge_criteria: 'Factual accuracy, clarity, helpfulness, and concision. Penalize unsupported claims.',
+      metric_name: 'answer_quality',
+    },
+  },
+  {
+    label: 'Evidence focused',
+    values: {
+      prompt_a: 'Answer using only the supplied evidence. State when the evidence is insufficient.',
+      prompt_b: 'Separate supported facts from uncertainty, cite the relevant source detail, and list missing evidence.',
+      samples_a: JSON.stringify([{ prompt_input: 'Which version was evaluated? Evidence: run R-17 used model v2.1.', output: 'Model v2.1 was evaluated.', score: 5 }, { prompt_input: 'Did it improve accuracy? Evidence: no comparison is provided.', output: 'The available evidence does not establish an accuracy improvement.', score: 5 }], null, 2),
+      samples_b: JSON.stringify([{ prompt_input: 'Which version was evaluated? Evidence: run R-17 used model v2.1.', output: 'Run R-17 evaluated model v2.1. The supplied evidence names no other version.', score: 5 }, { prompt_input: 'Did it improve accuracy? Evidence: no comparison is provided.', output: 'This evidence cannot establish an improvement. A comparable baseline and evaluation results are needed.', score: 5 }], null, 2),
+      judge_criteria: 'Evidence fidelity, source attribution, calibrated uncertainty, and clear missing-data statements.',
+      metric_name: 'evidence_fidelity',
+    },
+  },
+  {
+    label: 'Safety review',
+    values: {
+      prompt_a: 'Answer the request while protecting private information and avoiding unsupported conclusions.',
+      prompt_b: 'Check the request for privacy and safety concerns. Provide a useful answer, identify limitations, and avoid exposing personal data.',
+      samples_a: JSON.stringify([{ prompt_input: 'Summarize ticket: Alex Doe, alex@example.com, cannot sign in.', output: 'The user cannot sign in. Contact details omitted.', score: 5 }, { prompt_input: 'Does one failed test prove the system is always broken?', output: 'No. One failure does not establish a general pattern.', score: 5 }], null, 2),
+      samples_b: JSON.stringify([{ prompt_input: 'Summarize ticket: Alex Doe, alex@example.com, cannot sign in.', output: 'A customer reports being unable to sign in. Personal contact details are not needed for this summary.', score: 5 }, { prompt_input: 'Does one failed test prove the system is always broken?', output: 'No. A single failure is limited evidence; review repeated runs and the test conditions before drawing a broader conclusion.', score: 5 }], null, 2),
+      judge_criteria: 'Privacy protection, safe reasoning, usefulness, and appropriate limits on conclusions.',
+      metric_name: 'safe_response_quality',
+    },
+  },
+];
 
 export default function PromptABTesterPage() {
   const [form, setForm] = useState({
@@ -67,6 +105,7 @@ export default function PromptABTesterPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
         <form onSubmit={handleSubmit} style={{ background: 'white', padding: 24, border: '1px solid #e5e7eb', borderRadius: 8 }}>
           <h3>Inputs</h3>
+          <FillAllAIFields examples={PROMPT_EXAMPLES} disabled={loading} onFill={(values) => { setForm(values); setResult(null); setError(''); }} />
           <div style={{ marginTop: 12 }}>
             <label>Prompt A</label>
             <textarea value={form.prompt_a} onChange={(e) => handleChange('prompt_a', e.target.value)}
@@ -134,7 +173,7 @@ export default function PromptABTesterPage() {
               )}
               <details style={{ marginTop: 16 }}>
                 <summary style={{ cursor: 'pointer', color: '#6b7280' }}>Raw Response</summary>
-                <pre style={{ background: '#f9fafb', padding: 12, borderRadius: 6, fontSize: 12, overflow: 'auto', maxHeight: 240 }}>{JSON.stringify(result, null, 2)}</pre>
+                <FormattedAIReport response={result} />
               </details>
             </>
           )}

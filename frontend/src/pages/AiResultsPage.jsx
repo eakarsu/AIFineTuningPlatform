@@ -1,3 +1,4 @@
+import FormattedAIReport from "../components/FormattedAIReport";
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { FiActivity, FiSearch, FiCheckCircle, FiXCircle } from 'react-icons/fi';
@@ -115,11 +116,11 @@ export default function AiResultsPage() {
             <h3>Input</h3>
             <pre style={{ background: '#f3f4f6', padding: 12, borderRadius: 6, fontSize: 12, overflow: 'auto' }}>{JSON.stringify(selected.input, null, 2)}</pre>
             <h3>Output</h3>
-            <pre style={{ background: '#f3f4f6', padding: 12, borderRadius: 6, fontSize: 12, overflow: 'auto' }}>{JSON.stringify(selected.output, null, 2)}</pre>
+            <FormattedAIReport response={selected.output} />
             {selected.raw && (
               <>
                 <h3>Raw Response</h3>
-                <pre style={{ background: '#f3f4f6', padding: 12, borderRadius: 6, fontSize: 12, overflow: 'auto', maxHeight: 200 }}>{selected.raw}</pre>
+                <FormattedAIReport response={selected.raw} title="Raw response content" />
               </>
             )}
             <button onClick={() => setSelected(null)} style={{ marginTop: 16, padding: '8px 16px', background: '#6c63ff', color: 'white', border: 'none', borderRadius: 6 }}>Close</button>
